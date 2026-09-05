@@ -6,12 +6,13 @@ import (
 	"net"
 	"net/http"
 	"slices"
+	"strings"
 
-	"main/internal/geoip"
+	"github.com/oschwald/geoip2-golang"
 )
 
 type Handler struct {
-    geoIP *geoip.GeoIPReader
+	geoIP countryLookup
 }
 
 type checkRequest struct {
@@ -24,7 +25,11 @@ type checkResponse struct {
 	Country string `json:"country"`
 }
 
-func NewHandler(geoIP *geoip.GeoIPReader) *Handler {
+type countryLookup interface {
+    Lookup(ip net.IP) (*geoip2.Country, error)
+}
+
+func NewHandler(geoIP countryLookup) *Handler {
     return &Handler{
         geoIP: geoIP,
     }
@@ -50,23 +55,29 @@ func (h *Handler) PostCheckIPHandler(w http.ResponseWriter, r *http.Request) {
 	// slog.Info("Request", "ip", req.IP, "allow-list", req.AllowedCountries)
 	slog.Info("Request", "props", req)
 
+	// validate allowed countries list
+	if len(req.AllowedCountries) == 0 {
+		slog.Warn("Empty AllowedCountries List")
+		http.Error(w, "Empty AllowedCountries List", http.StatusBadRequest)
+		return
+	}
+
 	// validate IP request
 	parsedIP := net.ParseIP(req.IP)
 	if parsedIP == nil {
-		slog.Error("Invalid IP", "IP", req.IP)
+		slog.Warn("Invalid IP", "IP", req.IP)
 		http.Error(w, "Invalid IP", http.StatusBadRequest)
 		return
 	}
 	slog.Info("validated IP", "ip", parsedIP)
 
-	allowed, countryISO, err := doCheck(*h.geoIP, parsedIP, req.AllowedCountries)
+	allowed, countryISO, err := doCheck(h.geoIP, parsedIP, req.AllowedCountries)
 	if err != nil {
 		slog.Error("Error looking up Country by IP", "error", err)
 		http.Error(w, "Error looking up Country by IP", http.StatusInternalServerError)
 		return
 	}
-
-	slog.Info("IP allowlist status", "allowed", allowed)
+	slog.Info("IP allowlist status", "allowed", allowed, "countryISO", countryISO)
 
 	response := checkResponse{
 		Allowed: allowed,
@@ -84,13 +95,12 @@ func (h *Handler) PostCheckIPHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func doCheck(geoIPReader geoip.GeoIPReader, ip net.IP, allowedCountries []string) (bool, string, error) {
+func doCheck(lookup countryLookup, ip net.IP, allowedCountries []string) (bool, string, error) {
 	// perform lookup in the geoip database
-	geoIPRecord, err := geoIPReader.Lookup(ip)
+	geoIPRecord, err := lookup.Lookup(ip)
 	if err != nil {
 		return false, "", err
 	}
-	slog.Info("geoIPRecord found", "Country ISO2", geoIPRecord.Country.IsoCode)
 
 	allowed := isCountryAllowed(geoIPRecord.Country.IsoCode, allowedCountries)
 
@@ -98,6 +108,11 @@ func doCheck(geoIPReader geoip.GeoIPReader, ip net.IP, allowedCountries []string
 }
 
 func isCountryAllowed(countryISO string, allowedCountries []string) bool {
-	// TODO: make this check case-insenstive
-    return slices.Contains(allowedCountries, countryISO)
+	// make this check case-insenstive
+	uppercased := make([]string, len(allowedCountries))
+	for i, str := range allowedCountries {
+		uppercased[i] = strings.ToUpper(str)
+	}
+
+    return slices.Contains(uppercased, countryISO)
 }
