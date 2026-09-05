@@ -1,4 +1,4 @@
-module main
+module ip-access-service
 
 go 1.27.1
 

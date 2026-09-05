@@ -111,7 +111,6 @@ func TestPostCheckIPHandler(t *testing.T) {
             allowedCountries: nil,
             wantStatus:       http.StatusBadRequest,
         },
-		// {"Case-insensitive allowed case", "142.251.152.119", ["us", "uk"], true}, // not yet implemented
 		{
             name:             "Case-insensitive allowed case",
             ip:               "142.251.152.119",

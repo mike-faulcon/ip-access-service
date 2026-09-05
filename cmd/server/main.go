@@ -6,8 +6,8 @@ import (
     "net/http"
 	"os"
 
-	"main/internal/geoip"
-	"main/internal/httpapi"
+	"ip-access-service/internal/geoip"
+	"ip-access-service/internal/httpapi"
  )
 
  const (
