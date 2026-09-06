@@ -6,18 +6,18 @@ import (
     "net/http"
 	"os"
 
+	"ip-access-service/internal/config"
 	"ip-access-service/internal/geoip"
 	"ip-access-service/internal/httpapi"
- )
+)
 
- const (
-	Port = 8080
-	GeoIPPath = "../../data/GeoLite2-Country.mmdb"
- )
 
 func main() {
+	// Initialize Config
+	cfg := config.Load()
+
 	// Initialize GeoIP reader
-	geoIP, err := geoip.NewGeoIPReader(GeoIPPath)
+	geoIP, err := geoip.NewGeoIPReader(cfg.GeoIPPath)
     if err != nil {
         slog.Error("Failed to initialize GeoIP reader", "error", err)
 		os.Exit(1) // TODO: abort or let the service run in a partially initialized state?
@@ -39,11 +39,11 @@ func main() {
 
 	// Start the server
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", Port),
+		Addr:    fmt.Sprintf(":%d", cfg.Port),
 		Handler: loggedMux,
 	}
 
-	fmt.Printf("Server is running on port %d\n", Port)
+	fmt.Printf("Server is running on port %d\n", cfg.Port)
 	server.ListenAndServe()
 }
 
