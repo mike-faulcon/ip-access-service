@@ -2,10 +2,10 @@ module ip-access-service
 
 go 1.27.1
 
+require github.com/oschwald/geoip2-golang v1.13.0
+
 require (
-	github.com/oschwald/geoip2-golang v1.13.0 // indirect
-	github.com/oschwald/geoip2-golang/v2 v2.3.0 // indirect
 	github.com/oschwald/maxminddb-golang v1.13.0 // indirect
-	github.com/oschwald/maxminddb-golang/v2 v2.5.0 // indirect
+	github.com/stretchr/testify v1.11.1 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 )

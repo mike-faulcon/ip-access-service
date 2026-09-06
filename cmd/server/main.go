@@ -1,10 +1,15 @@
 package main
 
-import ( 
+import (
+	"context"
+	"errors"
 	"fmt"
 	"log/slog"
     "net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"ip-access-service/internal/config"
 	"ip-access-service/internal/geoip"
@@ -43,8 +48,36 @@ func main() {
 		Handler: loggedMux,
 	}
 
-	fmt.Printf("Server is running on port %d\n", cfg.Port)
-	server.ListenAndServe()
+	ctx, stop := signal.NotifyContext(
+        context.Background(),
+        syscall.SIGINT,
+        syscall.SIGTERM,
+    )
+    defer stop()
+
+    go func() {
+        slog.Info("HTTP server starting", "addr", server.Addr)
+
+        if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			slog.Error("HTTP server error", "error", err)
+        }
+    }()
+
+    <-ctx.Done()
+
+    slog.Info("shutdown signal received")
+
+    shutdownCtx, cancel := context.WithTimeout(
+        context.Background(),
+        5*time.Second,
+    )
+    defer cancel()
+
+    if err := server.Shutdown(shutdownCtx); err != nil {
+        slog.Error("HTTP server shutdown failed", "error", err)
+    }
+
+    slog.Info("HTTP server stopped")
 }
 
 // func getReadyHandler(w http.ResponseWriter, r *http.Request) {
