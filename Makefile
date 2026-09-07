@@ -25,6 +25,7 @@ docker-build:
 docker-run:
 	docker run --rm \
 		-p 8080:8080 \
+		-p 9090:9090/tcp \
 		-e GEOIP_DB_PATH=/data/GeoLite2-Country.mmdb \
 		-v "$$(pwd)/data:/data:ro" \
 		ip-access-service

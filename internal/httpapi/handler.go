@@ -6,7 +6,7 @@ import (
 	"net"
 	"net/http"
 
-	"ip-access-service/internal/service"
+	"github.com/mike-faulcon/ip-access-service/internal/service"
 )
 
 type Handler struct {
@@ -22,7 +22,6 @@ type checkResponse struct {
 	Allowed bool   `json:"allowed"`
 	Country string `json:"country"`
 }
-
 
 func NewHandler(accessService *service.AccessService) *Handler {
     return &Handler{
@@ -66,7 +65,12 @@ func (h *Handler) PostCheckIPHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	slog.Info("validated IP", "ip", parsedIP)
 
-	accessResult, err := h.accessService.Check(r.Context(), parsedIP, req.AllowedCountries)
+	accessRequest := service.AccessRequest{
+		IP:               parsedIP,
+		AllowedCountries: req.AllowedCountries,
+	}
+
+	accessResult, err := h.accessService.Check(r.Context(), accessRequest)
 	if err != nil {
 		slog.Error("Error performing access check", "error", err)
 		http.Error(w, "Error performing access check", http.StatusInternalServerError)

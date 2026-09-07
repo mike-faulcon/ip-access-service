@@ -7,7 +7,7 @@ import (
 func TestLoad(t *testing.T) {
 	cfg := Load()
 
-	if cfg.Port <= 0 {
+	if cfg.HTTPPort <= 0 {
 		t.Fatal("Config Port is invalid")
 	}
 

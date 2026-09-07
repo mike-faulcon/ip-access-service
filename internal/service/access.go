@@ -13,6 +13,11 @@ type AccessService struct {
 	geoIP countryLookup
 }
 
+type AccessRequest struct {
+    IP               net.IP
+    AllowedCountries []string
+}
+
 type AccessResult struct {
     Allowed    bool
     CountryISO string
@@ -30,10 +35,9 @@ func NewAccessService(geoIP countryLookup) *AccessService {
 
 func (s *AccessService) Check(
     ctx context.Context,
-    ip net.IP,
-    allowedCountries []string,
+	req AccessRequest,
 ) (AccessResult, error) {
-    geoIPRecord, err := s.geoIP.Lookup(ip)
+    geoIPRecord, err := s.geoIP.Lookup(req.IP)
     if err != nil {
         return AccessResult{}, err
     }
@@ -41,7 +45,7 @@ func (s *AccessService) Check(
 	countryISO := geoIPRecord.Country.IsoCode
 
 	return AccessResult{
-        Allowed:    isCountryAllowed(countryISO, allowedCountries),
+        Allowed:    isCountryAllowed(countryISO, req.AllowedCountries),
         CountryISO: countryISO,
     }, nil
 }
