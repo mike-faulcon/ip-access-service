@@ -11,7 +11,6 @@ data/
 Dockerfile
 .dockerignore
 
-README.md
+Makefile
 
-tmp
-coverage
+README.md

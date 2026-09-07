@@ -1,0 +1,13 @@
+services:
+  ip-access-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ip-access-service
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+    environment:
+      GEOIP_DB_PATH: /data/GeoLite2-Country.mmdb
+    volumes:
+      - ./data:/data:ro
