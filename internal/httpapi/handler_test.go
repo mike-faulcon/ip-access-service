@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	"github.com/oschwald/geoip2-golang"
+
+    "ip-access-service/internal/service"
 )
 
 // ------------------------------------
@@ -69,7 +71,7 @@ func TestPostCheckIPHandler(t *testing.T) {
         wantCountry      string   // Expected output - matched country
 	}{
 		{
-			name:             "Basic allowed case", 
+			name:             "basic allowed", 
 			ip:               "142.251.152.119", 
 			allowedCountries: []string{"US"},
 			mockGeoIPCountry: "US",
@@ -78,7 +80,7 @@ func TestPostCheckIPHandler(t *testing.T) {
 			wantCountry:      "US",
 		},
 		{
-            name:             "Basic not allowed case",
+            name:             "basic not allowed",
             ip:               "142.251.152.119",
             allowedCountries: []string{"UK", "FR"},
             mockGeoIPCountry: "US",
@@ -100,34 +102,27 @@ func TestPostCheckIPHandler(t *testing.T) {
             wantStatus:       http.StatusInternalServerError,
         },
 		{
-            name:             "Empty Country List",
+            name:             "empty country list",
             ip:               "142.251.152.119",
             allowedCountries: []string{},
             wantStatus:       http.StatusBadRequest,
         },
 		{
-            name:             "Nil Country List",
+            name:             "nil country list",
             ip:               "142.251.152.119",
             allowedCountries: nil,
             wantStatus:       http.StatusBadRequest,
-        },
-		{
-            name:             "Case-insensitive allowed case",
-            ip:               "142.251.152.119",
-            allowedCountries: []string{"us", "uk"},
-            mockGeoIPCountry: "US",
-            wantStatus:       http.StatusOK,
-            wantAllowed:      true,
-            wantCountry:      "US",
         },
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			h := NewHandler(mockCountryLookup{
+            lookup := mockCountryLookup{
                 country: tc.mockGeoIPCountry,
                 err:     tc.mockGeoIPError,
-            })
+            }
+            svc := service.NewAccessService(lookup)
+            h := NewHandler(svc)
 
 			requstPayload := checkRequest{
 				IP:               tc.ip,

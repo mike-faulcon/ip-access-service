@@ -7,6 +7,9 @@ run:
 test:
 	go test ./...
 
+test-verbose:
+	go test ./... -v
+
 coverage:
 	go test ./... -cover
 

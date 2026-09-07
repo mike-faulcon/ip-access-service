@@ -14,6 +14,7 @@ import (
 	"ip-access-service/internal/config"
 	"ip-access-service/internal/geoip"
 	"ip-access-service/internal/httpapi"
+	"ip-access-service/internal/service"
 )
 
 
@@ -22,21 +23,24 @@ func main() {
 	cfg := config.Load()
 
 	// Initialize GeoIP reader
-	geoIP, err := geoip.NewGeoIPReader(cfg.GeoIPPath)
+	geoIPReader, err := geoip.NewGeoIPReader(cfg.GeoIPPath)
     if err != nil {
         slog.Error("Failed to initialize GeoIP reader", "error", err)
 		os.Exit(1) // TODO: abort or let the service run in a partially initialized state?
     }
-    defer geoIP.Close()
+    defer geoIPReader.Close()
 
 	// Define API routes using the standard http.ServeMux
 	mux := http.NewServeMux()
 
 	// Setup health endpoint
 	mux.HandleFunc("/health", httpapi.GetHealthHandler)
-	
-	// Enable the ip-check handler to get the geoIP reader via dependency injection
-	h := httpapi.NewHandler(geoIP)
+
+	accessService := service.NewAccessService(geoIPReader)
+
+	// Enable the ip-check handler to get the access service instance via dependency injection
+    h := httpapi.NewHandler(accessService)
+
 	mux.HandleFunc("POST /v1/check", h.PostCheckIPHandler) 
 
 	// Wrap the mux with the logging middleware
