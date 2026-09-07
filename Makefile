@@ -10,6 +10,12 @@ test:
 test-verbose:
 	go test ./... -v
 
+test-http:
+	scripts/test-http.sh
+
+test-grpc:
+	scripts/test-grpc.sh
+
 coverage:
 	go test ./... -cover
 
