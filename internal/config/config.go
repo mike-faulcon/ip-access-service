@@ -1,6 +1,7 @@
 package config
 
 import (
+	"log/slog"
 	"os"
 	"strconv"
 )
@@ -28,6 +29,7 @@ func Load() Config {
 func getEnvString(key, fallback string) string {
 	value, exists := os.LookupEnv(key)
 	if !exists || value == "" {
+		slog.Warn("Environment variable (string) not found", "key", key, "fallback", fallback, "value", value)
 		return fallback
 	}
 
@@ -37,6 +39,7 @@ func getEnvString(key, fallback string) string {
 func getEnvInt(key string, fallback int) int {
 	value, exists := os.LookupEnv(key)
 	if !exists || value == "" {
+		slog.Warn("Environment variable (int) not found", "key", key, "fallback", fallback, "value", value)
 		return fallback
 	}
 

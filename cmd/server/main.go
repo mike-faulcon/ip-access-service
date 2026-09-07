@@ -26,6 +26,11 @@ import (
 func main() {
 	// Initialize Config
 	cfg := config.Load()
+	slog.Info("config loaded",
+		"http_port", cfg.HTTPPort,
+		"grpc_port", cfg.GRPCPort,
+		"geoip_path", cfg.GeoIPPath,
+	)
 
 	// Initialize GeoIP reader
 	geoIPReader, err := geoip.NewGeoIPReader(cfg.GeoIPPath)
