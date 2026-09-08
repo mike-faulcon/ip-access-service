@@ -64,6 +64,7 @@ func TestPostCheckIPHandler(t *testing.T) {
 		name             string   // Clear scenario name
 		ip               string   // Input IP address
 		allowedCountries []string // Input list of allowed countries
+		body             []byte   // Input JSON payload
 		mockGeoIPCountry string
 		mockGeoIPError   error
 		wantStatus       int    // Expected output - http status code
@@ -113,6 +114,11 @@ func TestPostCheckIPHandler(t *testing.T) {
 			allowedCountries: nil,
 			wantStatus:       http.StatusBadRequest,
 		},
+		{
+			name:       "invalid json",
+			body:       []byte("{invalid json]"),
+			wantStatus: http.StatusBadRequest,
+		},
 	}
 
 	for _, tc := range tests {
@@ -124,14 +130,16 @@ func TestPostCheckIPHandler(t *testing.T) {
 			svc := service.NewAccessService(lookup)
 			h := NewHandler(svc)
 
-			requstPayload := checkRequest{
-				IP:               tc.ip,
-				AllowedCountries: tc.allowedCountries,
-			}
-
-			body, err := json.Marshal(requstPayload)
-			if err != nil {
-				t.Fatal(err)
+			body := tc.body
+			var err error
+			if body == nil {
+				body, err = json.Marshal(checkRequest{
+					IP:               tc.ip,
+					AllowedCountries: tc.allowedCountries,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
 			}
 
 			req := httptest.NewRequest(http.MethodPost, "/v1/check", bytes.NewReader(body))
