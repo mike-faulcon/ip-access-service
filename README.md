@@ -83,3 +83,38 @@ make test-grpc     # smoke test gRPC endpoint
 make vet           # run go vet
 make coverage      # run tests with coverage
 ```
+
+## GeoIP database
+
+This service uses the [MaxMind GeoLite2 Country](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data) database (`GeoLite2-Country.mmdb`). The file is not committed to the repo (see `.gitignore`).
+
+### Obtaining the database
+
+1. Create a free MaxMind account and generate a license key.
+2. Download the GeoLite2 Country edition and extract `GeoLite2-Country.mmdb` into `data/` (or another path and set `GEOIP_DB_PATH`).
+3. Follow MaxMind's license terms, including required attribution.
+
+GeoLite2 Country is updated periodically (often weekly). A stale database can misclassify recently allocated IP ranges.
+
+### Maintenance plan
+
+We do not yet automate database updates. The phases below describe how we intend to improve maintenance over time.
+
+**Phase 1 — Document and bootstrap (near term)**  
+Document the manual download steps (above) so developers and operators can obtain the file without guesswork. Optionally add a download script or Makefile target that reads `MAXMIND_LICENSE_KEY` from the environment, downloads the tarball, and installs the `.mmdb` via atomic rename so partial downloads never corrupt the active file.
+
+**Phase 2 — Scheduled refresh outside the app (medium term)**  
+Refresh the file on a schedule without changing application code. Examples: host cron, CI scheduled job, or Kubernetes CronJob writing to a shared volume. After a successful download, restart the service (or redeploy an image built with a fresh DB). Store the license key in a secret manager; alert if the database is older than a chosen threshold (e.g. 14 days).
+
+**Phase 3 — In-process hot reload (later, optional)**  
+Periodically download a new database, validate it, atomically swap files, and reload the GeoIP reader in-process so HTTP/gRPC keep running without a restart. Would likely add configuration such as `GEOIP_UPDATE_INTERVAL` and optional health metadata (e.g. database last-modified time).
+
+**Phase 4 — Production hardening (optional)**  
+Startup checks for missing or overly stale databases, clearer operational visibility, and revisiting paid GeoIP2 Country if accuracy requirements increase.
+
+| Phase | Effort | Requires code changes |
+|-------|--------|------------------------|
+| 1 — Document / download helper | Low | No (docs only) or minimal (script) |
+| 2 — External scheduled refresh | Low–medium | No |
+| 3 — Hot reload | Medium | Yes |
+| 4 — Hardening | Varies | Yes |
