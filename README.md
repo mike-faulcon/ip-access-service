@@ -32,6 +32,10 @@ GEOIP_DB_PATH=/path/to/GeoLite2-Country.mmdb go run ./cmd/server
 
 ## Running
 
+### Prerequisites
+
+This repo does not include the MaxMind database. Before running locally or with Docker, download `GeoLite2-Country.mmdb` into `data/` (see [GeoIP database](#geoip-database) below). Without it, the service fails at startup with an error opening the database file.
+
 ### Local
 
 ```bash
