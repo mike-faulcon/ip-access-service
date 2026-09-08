@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestInit(t *testing.T) {
+func TestNewGeoIPReader_success(t *testing.T) {
 	reader, err := NewGeoIPReader("../../data/GeoLite2-Country.mmdb")
 	if err != nil {
 		t.Fatal(err)

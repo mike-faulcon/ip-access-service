@@ -4,14 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/oschwald/geoip2-golang"
-
 	"github.com/mike-faulcon/ip-access-service/internal/service"
+	"github.com/mike-faulcon/ip-access-service/internal/testutil"
 )
 
 // ------------------------------------
@@ -39,27 +37,7 @@ func TestGetHealthHandler(t *testing.T) {
 
 // ------------------------------------
 
-type mockCountryLookup struct {
-	country string
-	err     error
-}
-
-func (f mockCountryLookup) Lookup(net.IP) (*geoip2.Country, error) {
-	if f.err != nil {
-		return nil, f.err
-	}
-	return &geoip2.Country{
-		Country: struct {
-			Names             map[string]string `maxminddb:"names"`
-			IsoCode           string            `maxminddb:"iso_code"`
-			GeoNameID         uint              `maxminddb:"geoname_id"`
-			IsInEuropeanUnion bool              `maxminddb:"is_in_european_union"`
-		}{IsoCode: f.country},
-	}, nil
-}
-
 func TestPostCheckIPHandler(t *testing.T) {
-	// Use Table Tests
 	tests := []struct {
 		name             string   // Clear scenario name
 		ip               string   // Input IP address
@@ -123,9 +101,9 @@ func TestPostCheckIPHandler(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			lookup := mockCountryLookup{
-				country: tc.mockGeoIPCountry,
-				err:     tc.mockGeoIPError,
+			lookup := testutil.MockCountryLookup{
+				Country: tc.mockGeoIPCountry,
+				Err:     tc.mockGeoIPError,
 			}
 			svc := service.NewAccessService(lookup)
 			h := NewHandler(svc)

@@ -1,8 +1,8 @@
 package geoip
 
 import (
-	"log/slog"
 	"fmt"
+	"log/slog"
 	"net"
 
 	"github.com/oschwald/geoip2-golang"
@@ -14,20 +14,20 @@ type GeoIPReader struct {
 
 func NewGeoIPReader(path string) (*GeoIPReader, error) {
 	slog.Info("Initializing GeoIP reader", "path", path)
-    reader, err := geoip2.Open(path)
-    if err != nil {
-        return nil, fmt.Errorf("open GeoIP database: %w", err)
-    }
+	reader, err := geoip2.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("open GeoIP database: %w", err)
+	}
 
-    return &GeoIPReader{
-        reader: reader,
-    }, nil
+	return &GeoIPReader{
+		reader: reader,
+	}, nil
 }
 
 func (s *GeoIPReader) Lookup(ip net.IP) (*geoip2.Country, error) {
-    return s.reader.Country(ip)
+	return s.reader.Country(ip)
 }
 
 func (s *GeoIPReader) Close() error {
-    return s.reader.Close()
+	return s.reader.Close()
 }

@@ -14,6 +14,8 @@ Configuration is loaded from environment variables at startup. On launch, the se
 | `GRPC_PORT` | `9090` | gRPC server listen port |
 | `GEOIP_DB_PATH` | `data/GeoLite2-Country.mmdb` | Path to the MaxMind GeoLite2 Country database |
 
+Invalid non-empty values (e.g. HTTP_PORT=abc) prevent startup.
+
 ### Examples
 
 Run locally with custom ports:

@@ -41,7 +41,7 @@ func main() {
 	geoIPReader, err := geoip.NewGeoIPReader(cfg.GeoIPPath)
 	if err != nil {
 		slog.Error("Failed to initialize GeoIP reader", "error", err)
-		os.Exit(1) // TODO: abort or let the service run in a partially initialized state?
+		os.Exit(1)
 	}
 	defer geoIPReader.Close()
 
@@ -110,8 +110,3 @@ func main() {
 
 	slog.Info("HTTP & GRPC servers stopped")
 }
-
-// func getReadyHandler(w http.ResponseWriter, r *http.Request) {
-// 	w.WriteHeader(http.StatusOK)
-// 	w.Write([]byte("OK"))
-// }

@@ -3,35 +3,15 @@ package grpcapi
 import (
 	"context"
 	"errors"
-	"net"
 	"testing"
 
-	"github.com/oschwald/geoip2-golang"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	accessv1 "github.com/mike-faulcon/ip-access-service/gen/access/v1"
 	"github.com/mike-faulcon/ip-access-service/internal/service"
+	"github.com/mike-faulcon/ip-access-service/internal/testutil"
 )
-
-type mockCountryLookup struct {
-	country string
-	err     error
-}
-
-func (m mockCountryLookup) Lookup(net.IP) (*geoip2.Country, error) {
-	if m.err != nil {
-		return nil, m.err
-	}
-	return &geoip2.Country{
-		Country: struct {
-			Names             map[string]string `maxminddb:"names"`
-			IsoCode           string            `maxminddb:"iso_code"`
-			GeoNameID         uint              `maxminddb:"geoname_id"`
-			IsInEuropeanUnion bool              `maxminddb:"is_in_european_union"`
-		}{IsoCode: m.country},
-	}, nil
-}
 
 func TestCheckAccess(t *testing.T) {
 	tests := []struct {
@@ -69,6 +49,18 @@ func TestCheckAccess(t *testing.T) {
 			wantCode:         codes.InvalidArgument,
 		},
 		{
+			name:             "empty allowed countries",
+			ip:               "142.251.152.119",
+			allowedCountries: []string{},
+			wantCode:         codes.InvalidArgument,
+		},
+		{
+			name:             "nil allowed countries",
+			ip:               "142.251.152.119",
+			allowedCountries: nil,
+			wantCode:         codes.InvalidArgument,
+		},
+		{
 			name:             "lookup error",
 			ip:               "142.251.152.119",
 			allowedCountries: []string{"US"},
@@ -79,9 +71,9 @@ func TestCheckAccess(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			svc := service.NewAccessService(mockCountryLookup{
-				country: tc.mockGeoIPCountry,
-				err:     tc.mockGeoIPError,
+			svc := service.NewAccessService(testutil.MockCountryLookup{
+				Country: tc.mockGeoIPCountry,
+				Err:     tc.mockGeoIPError,
 			})
 			server := NewServer(svc)
 

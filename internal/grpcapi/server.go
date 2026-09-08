@@ -32,14 +32,19 @@ func (s *Server) CheckAccess(
 		return nil, status.Error(codes.InvalidArgument, "invalid IP address")
 	}
 
-	accessRequst := service.AccessRequest{
+	allowedCountries := req.GetAllowedCountries()
+	if len(allowedCountries) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "allowed countries list is empty")
+	}
+
+	accessRequest := service.AccessRequest{
 		IP:               ip,
-		AllowedCountries: req.GetAllowedCountries(),
+		AllowedCountries: allowedCountries,
 	}
 
 	result, err := s.service.Check(
 		ctx,
-		accessRequst,
+		accessRequest,
 	)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to check access")

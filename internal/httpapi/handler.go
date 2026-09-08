@@ -14,8 +14,8 @@ type Handler struct {
 }
 
 type checkRequest struct {
-    IP                string   `json:"ip"`
-    AllowedCountries  []string `json:"allowedCountries"`
+	IP               string   `json:"ip"`
+	AllowedCountries []string `json:"allowedCountries"`
 }
 
 type checkResponse struct {
@@ -24,29 +24,24 @@ type checkResponse struct {
 }
 
 func NewHandler(accessService *service.AccessService) *Handler {
-    return &Handler{
-        accessService: accessService,
-    }
+	return &Handler{
+		accessService: accessService,
+	}
 }
 
 func GetHealthHandler(w http.ResponseWriter, r *http.Request) {
-	slog.Info("Health check request received")
-
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("OK"))
 }
 
 func (h *Handler) PostCheckIPHandler(w http.ResponseWriter, r *http.Request) {
-	slog.Info("Check IP request received")
-
 	var req checkRequest
-    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-        http.Error(w, "Invalid JSON", http.StatusBadRequest)
-        return
-    }
-    defer r.Body.Close()
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
 
-	// slog.Info("Request", "ip", req.IP, "allow-list", req.AllowedCountries)
 	slog.Info("Request", "props", req)
 
 	// validate allowed countries list
@@ -84,7 +79,6 @@ func (h *Handler) PostCheckIPHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
 
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
@@ -92,4 +86,6 @@ func (h *Handler) PostCheckIPHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error encoding response", http.StatusInternalServerError)
 		return
 	}
+
+	w.WriteHeader(http.StatusOK)
 }
