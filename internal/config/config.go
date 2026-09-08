@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log/slog"
+	"fmt"
 	"os"
 	"strconv"
 )
@@ -18,35 +18,42 @@ type Config struct {
 	GeoIPPath string
 }
 
-func Load() Config {
-	return Config{
-		HTTPPort:  getEnvInt("HTTP_PORT", DefaultHTTPPort),
-		GRPCPort:  getEnvInt("GRPC_PORT", DefaultGRPCPort),
-		GeoIPPath: getEnvString("GEOIP_DB_PATH", DefaultGeoIPPath),
-	}
-}
-
-func getEnvString(key, fallback string) string {
-	value, exists := os.LookupEnv(key)
-	if !exists || value == "" {
-		slog.Warn("Environment variable (string) not found", "key", key, "fallback", fallback, "value", value)
-		return fallback
-	}
-
-	return value
-}
-
-func getEnvInt(key string, fallback int) int {
-	value, exists := os.LookupEnv(key)
-	if !exists || value == "" {
-		slog.Warn("Environment variable (int) not found", "key", key, "fallback", fallback, "value", value)
-		return fallback
-	}
-
-	parsed, err := strconv.Atoi(value)
+func Load() (Config, error) {
+	httpPort, err := getEnvInt("HTTP_PORT", DefaultHTTPPort)
 	if err != nil {
-		return fallback
+		return Config{}, err
 	}
 
-	return parsed
+	grpcPort, err := getEnvInt("GRPC_PORT", DefaultGRPCPort)
+	if err != nil {
+		return Config{}, err
+	}
+
+	geoIPPath := getEnvString("GEOIP_DB_PATH", DefaultGeoIPPath)
+
+	return Config{
+		HTTPPort:  httpPort,
+		GRPCPort:  grpcPort,
+		GeoIPPath: geoIPPath,
+	}, nil
+}
+
+func getEnvString(key, defaultVal string) string {
+	raw, ok := os.LookupEnv(key)
+	if !ok || raw == "" {
+		return defaultVal
+	}
+	return raw
+}
+
+func getEnvInt(key string, defaultVal int) (int, error) {
+	raw, ok := os.LookupEnv(key)
+	if !ok || raw == "" {
+		return defaultVal, nil
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil {
+		return 0, fmt.Errorf("%s: invalid integer %q", key, raw)
+	}
+	return n, nil
 }

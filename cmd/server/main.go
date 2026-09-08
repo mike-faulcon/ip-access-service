@@ -25,7 +25,12 @@ import (
 
 func main() {
 	// Initialize Config
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		slog.Error("Failed to load config", "error", err)
+		os.Exit(1)
+	}
+
 	slog.Info("config loaded",
 		"http_port", cfg.HTTPPort,
 		"grpc_port", cfg.GRPCPort,
