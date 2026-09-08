@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package access.v1;
+
+option go_package = "github.com/mike-faulcon/ip-access-service/gen/access/v1;accessv1";
+
+service AccessService {
+  rpc CheckAccess(CheckAccessRequest) returns (CheckAccessResponse);
+}
+
+message CheckAccessRequest {
+  string ip = 1;
+  repeated string allowed_countries = 2;
+}
+
+message CheckAccessResponse {
+  bool allowed = 1;
+  string country = 2;
+}
