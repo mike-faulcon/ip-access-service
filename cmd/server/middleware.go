@@ -1,9 +1,10 @@
 package main
 
-import ( 
+import (
 	"log/slog"
-    "net/http"
- )
+	"net/http"
+	"time"
+)
 
 // responseRecorder captures the status code written by the handler
 type responseRecorder struct {
@@ -25,21 +26,25 @@ func loggingMiddleware(next http.Handler) http.Handler {
 			statusCode:     http.StatusOK, // default if WriteHeader isn't called
 		}
 
+		start := time.Now()
 		next.ServeHTTP(recorder, r)
+		duration := time.Since(start)
 
-		// Check if the request resulted in a 404 Not Found
-		if recorder.statusCode == http.StatusNotFound {
-			slog.Warn("not found request",
-				"method", r.Method,
-				"path", r.URL.Path,
-				"remote_addr", r.RemoteAddr,
-			)
-		} else {
-			slog.Info("handled request",
-				"method", r.Method,
-				"path", r.URL.Path,
-				"status", recorder.statusCode,
-			)
+		attrs := []any{
+			"method", r.Method,
+			"path", r.URL.Path,
+			"status", recorder.statusCode,
+			"duration_ms", duration.Milliseconds(),
+			"remote_addr", r.RemoteAddr,
+		}
+
+		switch {
+		case recorder.statusCode >= 500:
+			slog.Error("request completed", attrs...)
+		case recorder.statusCode >= 400:
+			slog.Warn("request completed", attrs...)
+		default:
+			slog.Info("request completed", attrs...)
 		}
 	})
 }
